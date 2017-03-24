@@ -87,7 +87,7 @@ module ActiveModel
                 the_type = serializer.try(:read_attribute_for_serialization, "#{name}_type")
                 
                 if the_type.nil?
-                  the_type = serializer.object.try(:association,name).try(options).try(:fetch, :class_name)
+                  the_type = serializer.object.try(:association,name).try(:options).try(:fetch, :class_name)
                 end
                 the_type ||= name.to_s.pluralize
               rescue
