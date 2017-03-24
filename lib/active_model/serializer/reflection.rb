@@ -87,10 +87,19 @@ module ActiveModel
               rescue
                 return serializer.read_attribute_for_serialization(name)
               end
-                the_type = serializer.try(:read_attribute_for_serialization, "#{name}_type")
+                begin
+                  the_type = serializer.object.try("#{name}_type")
+                rescue
+                  the_type = nil
+                end
                 
                 if the_type.nil?
-                  the_type =  serializer.object.try(:association,name).try(:options).try(:fetch, :class_name).try(:pluralize).try(:underscore)
+                  begin
+                    assoc =  serializer.object.try(:association,name)
+                    the_type = assoc.options[:class_name].try(:pluralize).try(:underscore)
+                  rescue ActiveRecord::AssociationNotFoundError
+                    the_type = nil
+                  end
                 end
                 the_type ||= name.to_s.pluralize
               
@@ -105,9 +114,18 @@ module ActiveModel
               rescue
                 return serializer.read_attribute_for_serialization(name)
               end
-                the_type = serializer.try(:read_attribute_for_serialization, "#{name}_type")
+                begin
+                  the_type = serializer.object.try("#{name}_type")
+                rescue
+                  the_type = nil
+                end
                 if the_type.nil?
-                  the_type =  serializer.object.try(:association,name).try(:options).try(:fetch, :class_name).try(:pluralize).try(:underscore)
+                  begin
+                    assoc =  serializer.object.try(:association,name)
+                    the_type = assoc.options[:class_name].try(:pluralize).try(:underscore)
+                  rescue ActiveRecord::AssociationNotFoundError
+                    the_type = nil
+                  end
                 end
                 the_type ||= name.to_s
 
