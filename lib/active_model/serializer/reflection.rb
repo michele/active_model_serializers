@@ -84,15 +84,16 @@ module ActiveModel
             if self.is_a?(SingularReflection)
               begin
                 the_id = serializer.read_attribute_for_serialization("#{name}_id")
-                the_type = serializer.try(:read_attribute_for_serialization, "#{name}_type")
-                
-                if the_type.nil?
-                  the_type = serializer.object.try(:association,name).try(:options).try(:fetch, :class_name)
-                end
-                the_type ||= name.to_s.pluralize
               rescue
                 return serializer.read_attribute_for_serialization(name)
               end
+                the_type = serializer.try(:read_attribute_for_serialization, "#{name}_type")
+                
+                if the_type.nil?
+                  the_type =  serializer.object.try(:association,name).try(:options).try(:fetch, :class_name).try(:pluralize).try(:underscore)
+                end
+                the_type ||= name.to_s.pluralize
+              
               if the_id.present?
                 return MetaModel::MetaModel.new(data: {type: the_type, id: the_id})
               else
@@ -104,8 +105,14 @@ module ActiveModel
               rescue
                 return serializer.read_attribute_for_serialization(name)
               end
+                the_type = serializer.try(:read_attribute_for_serialization, "#{name}_type")
+                if the_type.nil?
+                  the_type =  serializer.object.try(:association,name).try(:options).try(:fetch, :class_name).try(:pluralize).try(:underscore)
+                end
+                the_type ||= name.to_s
+
               if the_ids && the_ids.any?
-                return the_ids.map{|tid| MetaModel::MetaModel.new(data: {type: name.to_s, id: tid})}
+                return the_ids.map{|tid| MetaModel::MetaModel.new(data: {type: the_type, id: tid})}
               else
                 return []
               end
