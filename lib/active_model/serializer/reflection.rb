@@ -1,4 +1,5 @@
 require 'active_model/serializer/field'
+require 'meta_model/meta_model'
 
 module ActiveModel
   class Serializer
@@ -79,7 +80,35 @@ module ActiveModel
         if block && block_value != :nil
           block_value
         else
-          serializer.read_attribute_for_serialization(name)
+          unless include_slice.key?(name)
+            if self.is_a?(SingularReflection)
+              begin
+                the_id = serializer.read_attribute_for_serialization("#{name}_id")
+                the_type = serializer.try(:read_attribute_for_serialization, "#{name}_type")
+                the_type ||= name.to_s.pluralize
+              rescue
+                return serializer.read_attribute_for_serialization(name)
+              end
+              if the_id.present?
+                return MetaModel::MetaModel.new(data: {type: the_type, id: the_id})
+              else
+                return nil
+              end
+            elsif self.is_a?(CollectionReflection)
+              begin
+                the_ids = serializer.read_attribute_for_serialization("#{name.to_s.singularize}_ids")
+              rescue
+                return serializer.read_attribute_for_serialization(name)
+              end
+              if the_ids && the_ids.any?
+                return the_ids.map{|tid| MetaModel::MetaModel.new(data: {type: name.to_s, id: tid})}
+              else
+                return []
+              end
+            end
+          else
+            serializer.read_attribute_for_serialization(name)
+          end
         end
       end
 
